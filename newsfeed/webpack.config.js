@@ -40,7 +40,7 @@ module.exports = {
       },
     ],
     proxy: {
-      "/api": "http://localhost:8080",
+      "/api": "http://localhost:4040",
     },
     port: 3000,
     historyApiFallback: true,

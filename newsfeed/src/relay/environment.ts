@@ -1,23 +1,33 @@
-import {
-  Store,
-  RecordSource,
-  Environment,
-  Network,
-  Observable,
-} from "relay-runtime";
-import type { FetchFunction, IEnvironment } from "relay-runtime";
+import type {FetchFunction, IEnvironment} from "relay-runtime";
+import {Environment, Network, Observable, RecordSource, Store,} from "relay-runtime";
+import fetchMultipart from 'fetch-multipart-graphql';
 
 const fetchFn: FetchFunction = (params, variables) => {
-  const response = fetch("/api", {
-    method: "POST",
-    headers: [["Content-Type", "application/json"]],
-    body: JSON.stringify({
-      query: params.text,
-      variables,
-    }),
+  return Observable.create(sink => {
+    fetchMultipart('/api', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'Accept': 'multipart/mixed; deferSpec=20220824, application/json'
+      },
+      body: JSON.stringify({
+        query: params.text,
+        variables,
+      }),
+      credentials: 'same-origin',
+      onNext: parts => {
+        parts.forEach(part => {
+          if (part.incremental) {
+            sink.next(part.incremental)
+          } else {
+            sink.next(part)
+          }
+        })
+      },
+      onError: err => sink.error(err),
+      onComplete: () => sink.complete(),
+    });
   });
-
-  return Observable.from(response.then((data) => data.json()));
 };
 
 export function createEnvironment(): IEnvironment {
